@@ -143,28 +143,27 @@ $play_podcast = (isset($_GET['pc'])) ? $_GET['pc'] : 'n';
 
 
 // check if site has a setting to restrict to a url
-if (isset($restrict_url)) {
-	if (strpos($src, 'https://') == 0) {
-		$src_host = substr($src, 8);
-	} else {
-		$src_host = substr($src, 7);
-	}
-	$src_pos = strpos($src_host,"/");
-	if ($src_pos) {
-		$src_host = substr($src_host,0, $src_pos);
-	}
+// Check if a source URL is provided and valid
+if (isset($src) && filter_var($src, FILTER_VALIDATE_URL)) $parsed_url = parse_url($src);
+    
+if ($parsed_url && isset($parsed_url['host'])) {
+	$src_host = $parsed_url['host'];
+} else {
+	$src_host = '';
 }
-if (isset($restrict_url) && substr($src_host, strlen($src_host)-strlen($restrict_url)) != $restrict_url) {
-	$src = htmlspecialchars($src);
-	
-	$str.= "document.write('<div class=\"rss-box" . $rss_box_id .
+
+// Enforce restriction if configured
+if (isset($restrict_url) && substr('.' . $src_host, -strlen($restrict_url)) !== $restrict_url) {
+	$src = htmlspecialchars($src, ENT_QUOTES, 'UTF-8');
+
+	$str .= "document.write('<div class=\"rss-box" . $rss_box_id .
 		"\"><p class=\"rss-item\"><em>Error:</em> on feed <strong>" .
 		$src . "</strong>. " .
 		"Feeds are allowed only from URLs from the sites http://*" .
 		$restrict_url . " and https://*" . $restrict_url .
 		"</p></div>');\n";
-		
-} else {
+} 
+else {
 
 
 	$rss = @fetch_rss( $src );
