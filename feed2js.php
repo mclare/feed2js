@@ -285,23 +285,25 @@ else {
 						
 				if ($tz == 'feed') {
 				//   echo the date/time stamp reported in the feed
-	
-					if ($item['pubdate'] != '') {
+					if ($item['start'] != '') {
+						// For Anthology/Campus Labs' Engage date option
+						$pretty_date = htmlspecialchars($item['start'], ENT_QUOTES, 'UTF-8');
+					} else if ($item['pubdate'] != '') {
 						// RSS 2.0 is already formatted, so just use it
-						$pretty_date = $item['pubdate'];
+						$pretty_date = htmlspecialchars($item['pubdate'], ENT_QUOTES, 'UTF-8');
 					} elseif ($item['published'] != "") {
 						// ATOM 1.0 format, remove the "T" and "Z" and the time zone offset
-						$pretty_date = str_replace("T", " ", $item['published']);
-						$pretty_date= str_replace("Z", " ", $pretty_date);
+						$pretty_date = htmlspecialchars(str_replace("T", " ", $item['published']), ENT_QUOTES, 'UTF-8');
+						$pretty_date= htmlspecialchars(str_replace("Z", " ", $pretty_date), ENT_QUOTES, 'UTF-8');
 		
 					} elseif ($item['issued'] != "") {
 						// ATOM 0.3 format, remove the "T" and "Z" and the time zone offset
-						$pretty_date = str_replace("T", " ", $item['issued']);
-						$pretty_date= str_replace("Z", " ", $pretty_date);
+						$pretty_date = htmlspecialchars(str_replace("T", " ", $item['issued']), ENT_QUOTES, 'UTF-8');
+						$pretty_date= htmlspecialchars(str_replace("Z", " ", $pretty_date), ENT_QUOTES, 'UTF-8');
 					} elseif ( $item['dc']['date'] != "") {
 						// RSS 1.0, remove the "T" and the time zone offset
-						$pretty_date = str_replace("T", " ", $item['dc']['date']);
-						$pretty_date = substr($pretty_date, 0,-6);
+						$pretty_date = htmlspecialchars(str_replace("T", " ", $item['dc']['date']), ENT_QUOTES, 'UTF-8');
+						$pretty_date = htmlspecialchars(substr($pretty_date, 0,-6), ENT_QUOTES, 'UTF-8');
 					} else {
 					
 						// no time/date stamp, 
