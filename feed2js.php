@@ -285,10 +285,7 @@ else {
 						
 				if ($tz == 'feed') {
 				//   echo the date/time stamp reported in the feed
-					if ($item['start'] != '') {
-						// For Anthology/Campus Labs' Engage date option
-						$pretty_date = htmlspecialchars($item['start'], ENT_QUOTES, 'UTF-8');
-					} else if ($item['pubdate'] != '') {
+					if ($item['pubdate'] != '') {
 						// RSS 2.0 is already formatted, so just use it
 						$pretty_date = htmlspecialchars($item['pubdate'], ENT_QUOTES, 'UTF-8');
 					} elseif ($item['published'] != "") {
@@ -309,7 +306,21 @@ else {
 						// no time/date stamp, 
 						$pretty_date =  'n/a';
 					}
-	
+				}
+				if ($tz == 'start') {
+				//   Use start and end times from Anthology/Campus Labs' Engage feed
+					if ($item['start'] != '') {
+						$utcTime = new DateTime($item['start'], new DateTimeZone('GMT')); // parse as GMT
+						$serverTz = new DateTimeZone(date_default_timezone_get());        // server timezone
+						$utcTime->setTimezone($serverTz);                                 // convert to server time
+						$pretty_date = $utcTime->format("F j, g:i a");
+					
+						if ($item['end'] != '') {
+							$utcTime = new DateTime($item['end'], new DateTimeZone('GMT')); // parse as GMT     // server timezone
+							$utcTime->setTimezone($serverTz);                               // convert to server time
+							$pretty_date .= " to " . $utcTime->format("F j, g:i a");
+						}
+					}
 				} else {
 					// convert to local time via conversion to GMT + offset
 					
@@ -318,13 +329,13 @@ else {
 					
 					// let's see what kind of timestamps we can pull...
 					if ($item['date_timestamp'] != "") {
-						$ts = $item['date_timestamp'];
+						$ts = htmlspecialchars($item['date_timestamp'], ENT_QUOTES, 'UTF-8');
 					}  elseif ($item['published'] != "") {
-						$ts = strtotime($item['published']);
+						$ts = strtotime(htmlspecialchars($item['published'], ENT_QUOTES, 'UTF-8'));
 					} elseif ($item['issued'] != "") {
-						$ts = strtotime($item['issued']);
+						$ts = strtotime(htmlspecialchars($item['issued'], ENT_QUOTES, 'UTF-8'));
 					} elseif ( $item['dc']['date'] != "") {
-						$ts = strtotime($item['dc']['date']);
+						$ts = strtotime(htmlspecialchars($item['dc']['date'], ENT_QUOTES, 'UTF-8'));
 					} else {
 						$ts = time();
 					}
