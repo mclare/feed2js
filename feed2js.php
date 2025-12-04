@@ -1,7 +1,7 @@
 <?php
 /*  Feed2JS : RSS feed to JavaScript src file
 
-	VERSION 2.5
+	VERSION 2.5-APCu
 	
 	ABOUT
 	This PHP script will take an RSS feed as a value of src="...."
@@ -44,6 +44,7 @@
 use BcMath\Number;
 
 $script_msg = '';
+$feedcheck_str = '';
 $src = (isset($_GET['src'])) ? $_GET['src'] : '';
 
 // trap for missing src param for the feed, use a dummy one so it gets displayed.
@@ -144,6 +145,23 @@ $rss_box_id = (isset($_GET['css'])) ? '-' . $_GET['css'] : '';
 // optional parameter to use different class for the CSS container
 $play_podcast = (isset($_GET['pc'])) ? $_GET['pc'] : 'n';
 
+
+if (function_exists('apcu_enabled') ? apcu_enabled() : function_exists('apcu_fetch')) {
+    $cache_key_source = $_GET;
+    $cache_key_source['src'] = $src;
+    ksort($cache_key_source);
+    $cache_key = 'feed2js:' . sha1((isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '') . '|' . (isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '') . '|' . http_build_query($cache_key_source));
+    $cached_output = apcu_fetch($cache_key);
+    if ($cached_output !== false) {
+        if (!headers_sent()) {
+            header("Content-type: application/x-javascript");
+        }
+        echo $cached_output;
+        return;
+    }
+} else {
+    $cache_key = null;
+}
 
 // PARSE FEED and GENERATE OUTPUT -------------------------------
 // This is where it all happens!
@@ -443,8 +461,13 @@ else {
 // headers to tell browser this is a JS file
 if ($rss) header("Content-type: application/x-javascript"); 
 
-// Spit out the results as the series of JS statements
-echo $feedcheck_str . $str;
+$output = $feedcheck_str . $str;
+if (isset($cache_key) && $cache_key) {
+    if (function_exists('apcu_enabled') ? apcu_enabled() : function_exists('apcu_store')) {
+        apcu_store($cache_key, $output, 60);
+    }
+}
+echo $output;
 
 
 ?>
