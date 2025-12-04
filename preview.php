@@ -18,6 +18,7 @@ $html = (isset($_GET['html'])) ? $_GET['html'] : 'n';
 $utf = (isset($_GET['utf'])) ? $_GET['utf'] : 'y';
 $rss_box_id = (isset($_GET['rss_box_id'])) ? $_GET['rss_box_id'] : '';
 $pc = (isset($_GET['pc'])) ? $_GET['pc'] : 'n';
+$event_offset = (isset($_GET['event_offset'])) ? $_GET['event_offset'] : 'n';
 
 
 // test for malicious use of script tages
@@ -46,6 +47,7 @@ if ($html != 'n') $html_options = "&html=$html";
 if ($utf == 'y') $options .= '&utf=y';
 if ($rss_box_id != '') $options .= "&css=$rss_box_id";
 if ($pc == 'y') $options .= '&pc=y';
+if ($event_offset != 0) $options .= "&event_offset=$event_offset";
 
 
 $rss_str = "feed2js.php?src=" . urlencode($src) . $options . $html_options;

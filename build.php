@@ -34,6 +34,7 @@
 	$utf = (isset($_GET['utf'])) ? $_GET['utf'] : 'y';
 	$rss_box_id = (isset($_GET['rss_box_id'])) ? $_GET['rss_box_id'] : '';
 	$pc = (isset($_GET['pc'])) ? $_GET['pc'] : 'n';
+	$event_offset = (isset($_GET['event_offset'])) ? $_GET['event_offset'] : '0';
 
 // check for status of submit buttons	
 	$generate = (isset($_GET['generate'])) ? $_GET['generate'] : '';
@@ -60,6 +61,7 @@
 	}
 	if ($rss_box_id != '') $options .= "&css=$rss_box_id";
 	if ($pc == 'y') $options .= '&pc=y';
+	if ($event_offset != 'event_offset') $options .= "&event_offset=$event_offset";
 
 
 	
@@ -67,8 +69,9 @@ if ($generate) {
 	// URLs for a preview or a generated feed link
 	
 	// trap for missing src param for the feed, use a dummy one so it gets displayed.
-	if ( empty($src) or (strpos($src, 'http') !==0)  )
-		die('Feed URL missing, incomplete, or not valid for ' . $src . '. Must start with http:// or https:// and be a valid URL');
+	if (!$src or
+	    (strpos($src, '//') !==0 and strpos($src, 'https://') !==0))
+		die('Feed URL missing, incomplete, or not valid. Must start with http:// or https:// and be a valid URL');
 
 
 	// test for malicious use of script tages
@@ -78,7 +81,7 @@ if ($generate) {
 	}
 
 	
-		$my_dir = 'http://' . $_SERVER['SERVER_NAME'] . dirname($_SERVER['PHP_SELF']);
+		$my_dir = 'https://' . $_SERVER['SERVER_NAME'] . dirname($_SERVER['PHP_SELF']);
 		
 		$rss_str = "$my_dir/feed2js.php?src=" . urlencode($src) . $options . $html_options;
 
@@ -173,7 +176,7 @@ function query_str(form) {
 <p><strong>URL</strong> Enter the web address of the RSS Feed (must be in http:// or https:// format, not feed://)<br>
 
 <input type="text" name="src" size="50" value="<?php echo $src?>"> <br>
-<span style="font-size:x-small">Note: Please verify the URL of your feed (make sure it presents raw RSS) and <a href="http://feedvalidator.org/" onClick="window.open('https://validator.w3.org/feed/check.cgi?url=?url=' + encodeURIComponent(document.builder.src.value), 'check'); return false;">check that it is valid</a>  before using this form.</span>
+<span style="font-size:x-small">Note: Please verify the URL of your feed (make sure it presents raw RSS) and <a href="http://feedvalidator.org/" onClick="window.open('http://feedvalidator.org/check.cgi?url=' + encodeURIComponent(document.builder.src.value), 'check'); return false;">check that it is valid</a>  before using this form.</span>
 </p>
 
 <div id="badge" style="width:250px; padding:0;">
@@ -209,12 +212,16 @@ function query_str(form) {
 <input type="radio" name="date" value="y" <?php if ($date=='y') echo 'checked="checked"'?>/> yes <input type="radio" name="date" value="n" <?php if ($date!='y') echo 'checked="checked"'?> /> no</p>
 
 <p><strong>Time Zone Offset</strong> (+n/-n/'feed') Date and timer are converted to GMT time; to have display in local time, you must enter an offset from your current local time to <strong><?php echo gmdate("r")?> (GMT)</strong>.  If your local time is 5 hours before GMT, enter <code>-5</code>. If your local time is 8 hours past GMT, enter <code>+8</code>. Fractional offsets such as +10:30 must be entered as decimal <code>+10.5</code>. If you prefer to just display the date is recorded in the RSS, use a value = <code>feed</code><br>
+This special version allows a value of <code>start</code> to support the start and end times from Anthology/Campus Labs' Engage feed.<br>
 <input type="text" name="tz" size="10" value="<?php echo $tz?>"></p>
+
+<p><em><strong>Event Offset</strong> This special version allows a value to offset the start times from Anthology/Campus Labs' Engage feed.</em><br>
+<input type="text" name="event_offset" size="10" value="<?php echo $event_offset?>"></p>
 
 <p><strong>Target links in the new window?</strong> (n="no, links open the same page", y="yes, open links in a new window", "xxxx" = open links in a frame named 'xxxx', 'popup' = use a <a href="popup.js">JavaScript function</a> <code>popupfeed()</code> to open in new window) <br>
 <input type="text" name="targ" size="10" value="<?php echo $targ?>"></p>
 
-<p><strong>UTF-8 Character Encoding</strong><br>  Required for many non-western language web pages and also may help if you see strange characters replacing quotes in your output.<br />
+<p><strong>UTF-8 Character Encoding</strong><br>  Required for many non-western language web pages and also may help if you see strange characters replacing quotes in your output (see <a href="http://feed2js.org/index.php?s=help#chars">help pages</a> for more information).<br />
 <input type="checkbox" name="utf" value="y" <?php if ($utf=='y') echo 'checked="checked"'?> /> use UTF-8 character encoding
 </p>
 

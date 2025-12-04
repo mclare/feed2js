@@ -41,6 +41,8 @@
 
 // ERROR CHECKING FOR NO SOURCE -------------------------------
 
+use BcMath\Number;
+
 $script_msg = '';
 $src = (isset($_GET['src'])) ? $_GET['src'] : '';
 
@@ -80,7 +82,7 @@ $chan = (isset($_GET['chan'])) ? $_GET['chan'] : 'n';
 
 // variable to limit number of displayed items; default = 0 (show all, 100 is a safe bet to list a big list of feeds)
 
-$num = (isset($_GET['num'])) ? $_GET['num'] : 0;
+$num = (isset($_GET['num'])) ? filter_var($_GET['num'], FILTER_VALIDATE_INT) : 0;
 if ($num==0) $num = 100;
 
 // indicator to show item description,  0 = no; 1=all; n>1 = characters to display
@@ -97,7 +99,12 @@ $date = (isset($_GET['date'])) ? $_GET['date'] : 'n';
 // time zone offset for making local time, 
 // e.g. +7, =-10.5; 'feed' = print the time string in the RSS w/o conversion
 $tz = (isset($_GET['tz'])) ? $_GET['tz'] : 'feed';
-
+if ($tz == 'start') { //if tz is start set num to 100 items and event_offset to 0, as we are using start time to filter
+	$event_offset = (isset($_GET['event_offset'])) ? filter_var($_GET['event_offset'], FILTER_VALIDATE_INT) :  0;
+	$event_i = 0;
+	$event_num = $num;
+	$num = 100;
+}
 
 // flag to open target window in new window; n = same window, y = new window,
 // other = targeted window, 'popup' = call JavaScript function popupfeed() to display
@@ -214,6 +221,22 @@ else {
 		$all_items = array_slice($rss->items, 0, $num);
 		
 		foreach ( $all_items as $item ) {
+
+			if ($tz == 'start') {
+
+				//   Use start and end times from Anthology/Campus Labs' Engage feed
+				if ($item['start'] != '') {
+					$utcTime = new DateTime($item['start'], new DateTimeZone('GMT')); // parse as GMT
+					$serverTz = new DateTimeZone(date_default_timezone_get());        // server timezone
+					
+				}
+				//If the event starts before now, we don't want it. It may end after now, but we only want events starting in the future, and from Anthology/Campus Labs' Engage feed includes ongoing events
+				if ($utcTime->getTimestamp()  < time() + $event_offset) {
+					continue;
+				}
+				else $event_i ++;
+				if ($event_i > $event_num) break;
+			}
 			
 			// set defaults thanks RPFK
 			if (!isset($item['summary'])) $item['summary'] = ''; 
@@ -310,13 +333,11 @@ else {
 				if ($tz == 'start') {
 				//   Use start and end times from Anthology/Campus Labs' Engage feed
 					if ($item['start'] != '') {
-						$utcTime = new DateTime($item['start'], new DateTimeZone('GMT')); // parse as GMT
-						$serverTz = new DateTimeZone(date_default_timezone_get());        // server timezone
-						$utcTime->setTimezone($serverTz);                                 // convert to server time
+						$utcTime->setTimezone($serverTz);                                 // convert to server time, computed above
 						$pretty_date = $utcTime->format("F j, g:i a");
-					
+
 						if ($item['end'] != '') {
-							$utcTime = new DateTime($item['end'], new DateTimeZone('GMT')); // parse as GMT     // server timezone
+							$utcTime = new DateTime($item['end'], new DateTimeZone('GMT')); // parse as GMT and convert to server timezone
 							$utcTime->setTimezone($serverTz);                               // convert to server time
 							$pretty_date .= " to " . $utcTime->format("F j, g:i a");
 						}
@@ -324,8 +345,7 @@ else {
 				} else {
 					// convert to local time via conversion to GMT + offset
 					
-					// adjust local server time to GMT and then adjust time according to user
-					// entered offset.
+					// adjust local server time to GMT and then adjust time according to user entered offset.
 					
 					// let's see what kind of timestamps we can pull...
 					if ($item['date_timestamp'] != "") {
